@@ -1,12 +1,10 @@
 # RateRadar: Autonomous Pricing Intelligence for Short-Term Rentals
 
-**RateRadar** is an autonomous multi-agent pricing intelligence platform for self-catering properties, developed as a Kaggle/Google AI Agents capstone project. The live rollout specifically targets Greencastle, Co. Donegal (Booking.com City ID: `-1503269`). 
+**RateRadar** is an autonomous multi-agent pricing intelligence platform for self-catering properties, developed as a Kaggle/Google AI Agents capstone project. In this instance, we monitored a self-catering apartment in Donegal, Ireland.
 
 Short-term rental pricing is traditionally reactive, manual, and fragmented. Managing a 90-day window across multiple guest counts requires **270 manual checks every week**. This leads to two costly failures: **Lost Revenue** during demand spikes, and **Empty Calendars** as booking windows close.
 
 **RateRadar** solves this by automating market scanning and goes beyond basic scrapers by allowing hosts to configure pricing thresholds to match their specific business strategy. In our live capstone rollout, the system executed **263 live market scrapes** autonomously against real-world travel websites protected by anti-bot mechanisms, and maintained dashboard availability throughout testing by gracefully degrading to synthetic seed data whenever live scraping failed. It achieved a **4.89/5.0** LLM evaluation score for its dynamic strategy reasoning.
-**Property monitored:** Harbour Bar Apartment, Greencastle, Co. Donegal, Ireland  
-**Booking.com listing:** [Harbour Bar Apartment on Booking.com](https://www.booking.com/hotel/ie/harbour-bar-apartment.en-gb.html)
 
 ### 🎥 Capstone Video Presentation
 [![Watch the Capstone Presentation](https://img.youtube.com/vi/erABGKKtvMw/maxresdefault.jpg)](https://youtu.be/erABGKKtvMw)
