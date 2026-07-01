@@ -1,0 +1,64 @@
+# Cloud Scheduler configuration for weekly Booking.com pricing scans.
+#
+# This deploys a Cloud Scheduler job for each guest count (2, 4, 6) that
+# fires every morning at 08:00 Europe/Dublin time and POSTs to the
+# /api/scan endpoint of the deployed Cloud Run service.
+#
+# Prerequisites:
+#   - App deployed to Cloud Run (see deployment/terraform/)
+#   - CLOUD_RUN_URL env var set to the service URL
+#   - PRICING_MONITOR_API_KEY env var set (stored in Secret Manager)
+#
+# Deploy:
+#   cd deployment
+#   ./deploy_scheduler.sh
+
+schedules:
+  - name: "pricing-monitor-weekly-scan-2guests"
+    description: "Weekly Booking.com scan for 2-guest stays (Greencastle, Jul-Sep 2026)"
+    schedule: "0 8 * * *"          # 08:00 every day
+    timezone: "Europe/Dublin"
+    target:
+      type: http
+      method: POST
+      path: /api/scan
+      headers:
+        Content-Type: application/json
+        X-API-Key: "${PRICING_MONITOR_API_KEY}"
+      body:
+        location: "Greencastle"
+        guest_count: 2
+        # checkin_date is omitted → server defaults to today+1 (rolling window)
+        force_fallback: false
+
+  - name: "pricing-monitor-weekly-scan-4guests"
+    description: "Weekly Booking.com scan for 4-guest stays (Greencastle, Jul-Sep 2026)"
+    schedule: "15 8 * * *"         # 08:15 (staggered to avoid Booking.com rate limits)
+    timezone: "Europe/Dublin"
+    target:
+      type: http
+      method: POST
+      path: /api/scan
+      headers:
+        Content-Type: application/json
+        X-API-Key: "${PRICING_MONITOR_API_KEY}"
+      body:
+        location: "Greencastle"
+        guest_count: 4
+        force_fallback: false
+
+  - name: "pricing-monitor-weekly-scan-6guests"
+    description: "Weekly Booking.com scan for 6-guest stays (Greencastle, Jul-Sep 2026)"
+    schedule: "30 8 * * *"         # 08:30 (staggered)
+    timezone: "Europe/Dublin"
+    target:
+      type: http
+      method: POST
+      path: /api/scan
+      headers:
+        Content-Type: application/json
+        X-API-Key: "${PRICING_MONITOR_API_KEY}"
+      body:
+        location: "Greencastle"
+        guest_count: 6
+        force_fallback: false

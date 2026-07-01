@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RateRadar — Autonomous Pricing Intelligence for Short-Term Rentals</title>
+    <link rel="stylesheet" href="/dashboard.css?v=1.3.3">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Theme Init (Non-blocking) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="brand">
+                <!-- Inline SVG Radar Icon (Abstract Market Signal) -->
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="brand-logo-svg" style="filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.6));">
+                    <!-- Concentric Rings -->
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke-width="1.5"></circle>
+                    <circle cx="12" cy="12" r="6" stroke-opacity="0.15" stroke-dasharray="3 3" stroke-width="1.5"></circle>
+                    
+                    <!-- Expanding Signal Wave -->
+                    <circle cx="12" cy="12" r="2" stroke="#c084fc" stroke-width="1.5" class="radar-wave" style="transform-origin: 12px 12px;"></circle>
+                    
+                    <!-- Pulsing Center Signal Dot -->
+                    <circle cx="12" cy="12" r="2" fill="#c084fc" class="radar-center-dot" style="transform-origin: 12px 12px;"></circle>
+                </svg>
+                <div class="brand-text">
+                    <h1>RateRadar</h1>
+                    <p>Autonomous Pricing Intelligence for Short-Term Rentals</p>
+                </div>
+            </div>
+            <div class="header-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Scraper Mode:</span>
+                    <span class="meta-value badge-green" id="data-path-indicator">Live Scraper</span>
+                </div>
+                <!-- Theme Toggle Button -->
+                <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- LEFT COLUMN: CONTROLS & LIGHT THEME CALENDAR GRID -->
+        <section class="dashboard-column left-column">
+            <!-- Controls Card -->
+            <div class="dashboard-card controls-card">
+                <h2>Scan Controls</h2>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label>Guest Capacity</label>
+                        <div class="guest-selector" id="guest-selector">
+                            <button class="selector-btn active" data-guests="2">2 Guests</button>
+                            <button class="selector-btn" data-guests="4">4 Guests</button>
+                            <button class="selector-btn" data-guests="6">6 Guests</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Check-in Date to Scan</label>
+                        <select id="scan-date-selector" class="custom-select">
+                            <!-- Populated by JS: all dates Jul 5 – Sep 30 2026 -->
+                        </select>
+                    </div>
+                </div>
+                <div class="scan-actions">
+                    <button class="primary-btn" id="run-scan-btn">
+                        <span class="btn-text">Run Real-Time Competitor Scan</span>
+                        <span class="btn-spinner hidden"></span>
+                    </button>
+                    <div class="scan-options-toggle">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="force-fallback-check">
+                            <span class="checkmark"></span>
+                            Force Synthetic Fallback (Demo Continuity)
+                        </label>
+                    </div>
+
+                    <!-- Collapsible Advanced Pricing Strategy Panel -->
+                    <details class="advanced-strategy-panel" id="advanced-strategy-panel">
+                        <summary class="panel-summary">Advanced Pricing Strategy</summary>
+                        <div class="panel-content">
+                            <p class="panel-intro-text">
+                                Different properties compete in different parts of the market. Adjust these thresholds to reflect your property's pricing strategy.
+                            </p>
+                            
+                            <!-- Presets Selector -->
+                            <div class="preset-selectors-container">
+                                <label class="preset-option-label">
+                                    <input type="radio" name="strategy-preset" value="occupancy" id="preset-occupancy">
+                                    <div class="preset-card-body">
+                                        <strong>Occupancy Focused</strong>
+                                        <p>Prioritises occupancy and reviews. Tolerant of low pricing. (Bottom 5% / Top 70%)</p>
+                                    </div>
+                                </label>
+                                <label class="preset-option-label">
+                                    <input type="radio" name="strategy-preset" value="balanced" id="preset-balanced" checked>
+                                    <div class="preset-card-body">
+                                        <strong>Balanced (Default)</strong>
+                                        <p>Standard settings suited for most properties. (Bottom 10% / Top 50%)</p>
+                                    </div>
+                                </label>
+                                <label class="preset-option-label">
+                                    <input type="radio" name="strategy-preset" value="premium" id="preset-premium">
+                                    <div class="preset-card-body">
+                                        <strong>Premium Positioning</strong>
+                                        <p>luxury focus. Sensitive to low positioning. (Bottom 25% / Top 30%)</p>
+                                    </div>
+                                </label>
+                                <label class="preset-option-label">
+                                    <input type="radio" name="strategy-preset" value="custom" id="preset-custom">
+                                    <div class="preset-card-body">
+                                        <strong>Custom Configuration</strong>
+                                        <p>Manually configure your underpricing and overpricing thresholds.</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Nested Collapsible Custom Sliders -->
+                            <details class="custom-strategy-details" id="custom-strategy-details">
+                                <summary class="custom-summary">Custom Strategy Controls</summary>
+                                <div class="custom-sliders-content">
+                                    <div class="slider-group">
+                                        <div class="slider-header-flex">
+                                            <span>Underpricing Alert Threshold</span>
+                                            <span class="slider-value-display" id="display-low">Bottom 10%</span>
+                                        </div>
+                                        <input type="range" id="slider-low" min="5" max="40" step="5" value="10">
+                                        <p class="slider-help-text">Raise an alert if your nightly rate falls within the cheapest X% of comparable properties.</p>
+                                    </div>
+                                    <div class="slider-group">
+                                        <div class="slider-header-flex">
+                                            <span>Overpricing Alert Threshold</span>
+                                            <span class="slider-value-display" id="display-high">Top 50%</span>
+                                        </div>
+                                        <input type="range" id="slider-high" min="20" max="70" step="5" value="50">
+                                        <p class="slider-help-text">Raise an alert if your nightly rate reaches the most expensive X% of comparable properties.</p>
+                                    </div>
+                                </div>
+                            </details>
+                            
+                            <div class="strategy-status-alert hidden" id="strategy-status-alert">
+                                Settings saved — run a new scan to apply.
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Calendar Card (Light Theme Host Calendar) -->
+            <div class="dashboard-card calendar-card">
+                <div class="card-header-flex" style="margin-bottom: 12px;">
+                    <h2>Availability & Pricing</h2>
+                    <span class="subtitle">Ledger</span>
+                </div>
+                
+                <!-- Compact Legend for Availability Grid -->
+                <div class="calendar-legend" style="display: flex; gap: 14px; font-size: 11px; color: #717171; margin-bottom: 20px; border-bottom: 1px solid #ebebeb; padding-bottom: 12px; font-weight: 500;">
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: var(--color-healthy); border: 1px solid rgba(16,185,129,0.3);"></span> Healthy
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: var(--color-low); border: 1px solid rgba(6,182,212,0.3);"></span> Too Low
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: var(--color-high); border: 1px solid rgba(239,68,68,0.3);"></span> Too High
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid #dddddd; background-color: #f7f7f7;"></span> No Data
+                    </span>
+                </div>
+
+                <div class="months-container" id="months-container">
+                    <div class="loading-state">Loading calendar months...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: DETAILS, CHAT, TIMELINE & ALERTS -->
+        <section class="dashboard-column right-column">
+            <!-- Details View Card -->
+            <div class="dashboard-card details-card" id="details-card">
+                <h2>Analysis Detail</h2>
+                <div class="empty-selection-state" id="empty-details-msg">
+                    Select a date card from the calendar grid to view the deep pricing analysis, confidence ratings, and analyst explanations.
+                </div>
+                <div class="details-content hidden" id="details-content">
+                    <div class="details-header">
+                        <div class="date-badge" id="details-date">July 15, 2026</div>
+                        <div class="source-badge-container">
+                            <span class="source-label">Source:</span>
+                            <span class="source-value" id="details-source">LIVE</span>
+                        </div>
+                    </div>
+
+                    <div class="pricing-metrics-grid">
+                        <div class="metric-box" id="details-my-price-box">
+                            <span class="metric-label" id="details-my-price-label">Harbour Bar Apartment Rate</span>
+                            <span class="metric-val highlight" id="details-my-price">€220.00</span>
+                            <span class="metric-period">2-night stay</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">Competitor Median</span>
+                            <span class="metric-val" id="details-median-price">€245.00</span>
+                            <span class="metric-period">2-night stay</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label" id="details-10th-price-label">10th Percentile</span>
+                            <span class="metric-val" id="details-10th-price">€210.00</span>
+                            <span class="metric-period">2-night stay</span>
+                        </div>
+                    </div>
+
+                    <!-- Status & Recommendation Alert -->
+                    <div class="status-alert-box" id="details-status-box">
+                        <div class="status-alert-header">
+                            <span class="status-indicator-dot" id="details-status-dot"></span>
+                            <h3 id="details-status-title">Pricing Status: Healthy</h3>
+                        </div>
+                        <p id="details-recommendation-text">Maintain current rate. Price is competitive with local market.</p>
+                    </div>
+
+                    <!-- Data Source Signal Panel -->
+                    <div class="confidence-container">
+                        <div class="confidence-header">
+                            <h4>Data Source</h4>
+                            <span class="confidence-badge badge-green" id="details-confidence-badge">LIVE DATA</span>
+                        </div>
+                        <p class="confidence-reason" id="details-confidence-reason">Real-time Booking.com market data. Results reflect current competitor pricing.</p>
+                    </div>
+
+                    <!-- Structured Explanation Panel -->
+                    <div class="explanation-container">
+                        <h4>Structured Analyst Explanation</h4>
+                        <div class="explanation-markdown-body" id="details-explanation">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Strategy Assistant Chat -->
+            <div class="dashboard-card chat-card">
+                <h2>Business Strategy Assistant</h2>
+                <div class="chat-thread-container" id="chat-thread">
+                    <div class="chat-message system-message">
+                        Hello! I am your Pricing Coordinator. Ask me strategic pricing questions, or select a quick prompt below:
+                    </div>
+                </div>
+                
+                <!-- Quick Suggestion Chips -->
+                <div class="chat-chips-container">
+                    <span class="chat-chip" onclick="submitStrategyQuery('What are my occupancy risks?')">Occupancy Risks</span>
+                    <span class="chat-chip" onclick="submitStrategyQuery('What are my rate opportunities?')">Rate Opportunities</span>
+                    <span class="chat-chip" onclick="submitStrategyQuery('What changed since the last run?')">Recent Changes</span>
+                </div>
+
+                <div class="chat-input-bar">
+                    <input type="text" id="chat-input" placeholder="Type a strategy question...">
+                    <button class="primary-btn" id="chat-send-btn" style="padding: 10px 18px;">Send</button>
+                </div>
+            </div>
+
+
+
+            <!-- Observability Timeline Card -->
+            <div class="dashboard-card timeline-card">
+                <h2>Scan Activity Timeline</h2>
+                <div class="timeline-container" id="timeline-container">
+                    <div class="loading-state">Loading activity timeline...</div>
+                </div>
+                <h2 style="margin-top: 24px;">Internal Agent Trace Logs</h2>
+                <div class="trace-logs-container" id="trace-logs-container">
+                    <div class="loading-state">Loading step logs...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- UI Logic Scripts -->
+    <script>
+        const API_KEY = "capstone-key-2026"; // Secure header token
+        let currentGuests = 2;
+        let selectedScanId = null;
+
+        // Fetch headers configuration
+        const fetchHeaders = {
+            "X-API-Key": API_KEY,
+            "Content-Type": "application/json"
+        };
+
+        // Calendar configuration for July, August, September 2026 (Sun-Sat layout)
+        const MONTHS_CONFIG = [
+            { name: "July 2026", year: 2026, month: 6, startOffset: 3, totalDays: 31 }, // July: Starts Wednesday (index 3 with Sun=0)
+            { name: "August 2026", year: 2026, month: 7, startOffset: 6, totalDays: 31 }, // August: Starts Saturday (index 6 with Sun=0)
+            { name: "September 2026", year: 2026, month: 8, startOffset: 2, totalDays: 30 } // September: Starts Tuesday (index 2 with Sun=0)
+        ];
+
+        // DOM Elements
+        const guestSelector = document.getElementById("guest-selector");
+        const runScanBtn = document.getElementById("run-scan-btn");
+        const scanDateSelector = document.getElementById("scan-date-selector");
+        const forceFallbackCheck = document.getElementById("force-fallback-check");
+        const monthsContainer = document.getElementById("months-container");
+        const alertsList = null; // Alerts feed removed — calendar shows all alert dates visually
+
+        // Populate scan date picker: Jul 5 – Sep 30 2026
+        (function populateScanDates() {
+            const start = new Date(2026, 6, 5);  // Jul 5
+            const end   = new Date(2026, 8, 30); // Sep 30
+            // Use local date parts to avoid UTC timezone offset rolling the date back
+            const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const label = d => d.toLocaleDateString('en-IE', { weekday:'short', day:'numeric', month:'short' });
+            // Default to 14 days from today if it falls in window, else start of window
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 14);
+            const defaultStr = fmt(defaultDate >= start && defaultDate <= end ? defaultDate : start);
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const opt = document.createElement('option');
+                opt.value = fmt(new Date(d));
+                opt.textContent = label(new Date(d));
+                if (opt.value === defaultStr) opt.selected = true;
+                scanDateSelector.appendChild(opt);
+            }
+        })();
+        const timelineContainer = document.getElementById("timeline-container");
+        const traceLogsContainer = document.getElementById("trace-logs-container");
+        
+        const chatInput = document.getElementById("chat-input");
+        const chatSendBtn = document.getElementById("chat-send-btn");
+        const chatThread = document.getElementById("chat-thread");
+        
+        const emptyDetailsMsg = document.getElementById("empty-details-msg");
+        const detailsContent = document.getElementById("details-content");
+        
+        const detailsDate = document.getElementById("details-date");
+        const detailsSource = document.getElementById("details-source");
+        const detailsMyPriceBox = document.getElementById("details-my-price-box");
+        const detailsMyPriceLabel = document.getElementById("details-my-price-label");
+        const detailsMyPrice = document.getElementById("details-my-price");
+        const detailsMedianPrice = document.getElementById("details-median-price");
+        const details10thPriceLabel = document.getElementById("details-10th-price-label");
+        const details10thPrice = document.getElementById("details-10th-price");
+        const detailsStatusBox = document.getElementById("details-status-box");
+        const detailsStatusTitle = document.getElementById("details-status-title");
+        const detailsRecommendationText = document.getElementById("details-recommendation-text");
+        const detailsConfidenceBadge = document.getElementById("details-confidence-badge");
+        const detailsConfidenceReason = document.getElementById("details-confidence-reason");
+        const detailsExplanation = document.getElementById("details-explanation");
+
+        // Helper to format date strings nicely
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Dynamic Strategy State Management
+        let activePricingStrategy = localStorage.getItem('rateradar_pricing_strategy') || 'balanced';
+        let activeTooLowThreshold = parseInt(localStorage.getItem('rateradar_too_low_threshold')) || 10;
+        let activeTooHighThreshold = parseInt(localStorage.getItem('rateradar_too_high_threshold')) || 50;
+        let currentSelectedDate = null;
+
+        // Strategy UI Elements
+        const advPanel = document.getElementById("advanced-strategy-panel");
+        const customDetails = document.getElementById("custom-strategy-details");
+        const sliderLow = document.getElementById("slider-low");
+        const sliderHigh = document.getElementById("slider-high");
+        const displayLow = document.getElementById("display-low");
+        const displayHigh = document.getElementById("display-high");
+        const statusAlert = document.getElementById("strategy-status-alert");
+
+        // Restore Advanced Panel open/close state
+        if (localStorage.getItem('rateradar_advanced_panel_open') === 'true') {
+            advPanel.open = true;
+        }
+        advPanel.addEventListener('toggle', () => {
+            localStorage.setItem('rateradar_advanced_panel_open', advPanel.open);
+        });
+
+        // Preset mapping values
+        const PRESETS = {
+            occupancy: { low: 5, high: 70 },
+            balanced: { low: 10, high: 50 },
+            premium: { low: 25, high: 30 }
+        };
+
+        function updateStrategyUI(isInitialLoad = false) {
+            // Check correct radio button
+            const radio = document.getElementById(`preset-${activePricingStrategy}`);
+            if (radio) radio.checked = true;
+
+            // Sync sliders
+            sliderLow.value = activeTooLowThreshold;
+            sliderHigh.value = activeTooHighThreshold;
+
+            // Update display labels
+            displayLow.textContent = `Bottom ${activeTooLowThreshold}%`;
+            displayHigh.textContent = `Top ${activeTooHighThreshold}%`;
+
+            // Expand custom section if custom preset is active
+            if (activePricingStrategy === 'custom') {
+                customDetails.open = true;
+            } else {
+                customDetails.open = false;
+            }
+
+            // Show settings alert on user interaction changes
+            if (!isInitialLoad) {
+                statusAlert.classList.remove("hidden");
+                loadCalendar(); // Refresh calendar highlights in real-time
+            }
+        }
+
+        // Handle Preset selection change
+        document.querySelectorAll('input[name="strategy-preset"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const choice = e.target.value;
+                activePricingStrategy = choice;
+                localStorage.setItem('rateradar_pricing_strategy', choice);
+
+                if (PRESETS[choice]) {
+                    activeTooLowThreshold = PRESETS[choice].low;
+                    activeTooHighThreshold = PRESETS[choice].high;
+                    localStorage.setItem('rateradar_too_low_threshold', activeTooLowThreshold);
+                    localStorage.setItem('rateradar_too_high_threshold', activeTooHighThreshold);
+                }
+                updateStrategyUI();
+            });
+        });
+
+        // Handle Custom Slider changes
+        function handleSliderInput() {
+            activePricingStrategy = 'custom';
+            localStorage.setItem('rateradar_pricing_strategy', 'custom');
+            
+            // Validate overlap
+            let valLow = parseInt(sliderLow.value);
+            let valHigh = parseInt(sliderHigh.value);
+            
+            if (valLow >= (100 - valHigh)) {
+                // Adjust to avoid overlap
+                valLow = (100 - valHigh) - 5;
+                sliderLow.value = valLow;
+            }
+
+            activeTooLowThreshold = valLow;
+            activeTooHighThreshold = valHigh;
+            localStorage.setItem('rateradar_too_low_threshold', valLow);
+            localStorage.setItem('rateradar_too_high_threshold', valHigh);
+
+            updateStrategyUI();
+        }
+
+        sliderLow.addEventListener('input', handleSliderInput);
+        sliderHigh.addEventListener('input', handleSliderInput);
+
+        // Dynamic Scraper Mode Header Badge Sync
+        function updateHeaderScraperBadge() {
+            const indicator = document.getElementById("data-path-indicator");
+            if (indicator) {
+                if (forceFallbackCheck.checked) {
+                    indicator.textContent = "Synthetic Fallback";
+                    indicator.className = "meta-value badge-red";
+                } else {
+                    indicator.textContent = "Live Scraper";
+                    indicator.className = "meta-value badge-green";
+                }
+            }
+        }
+        forceFallbackCheck.addEventListener("change", updateHeaderScraperBadge);
+        updateHeaderScraperBadge();
+
+        // Initialize Strategy state
+        updateStrategyUI(true);
+
+        // Initialize dashboard content
+        async function initDashboard() {
+            await loadCalendar();
+            await loadTelemetry();
+        }
+
+        // Handle Guest selection changes
+        guestSelector.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".selector-btn");
+            if (!btn) return;
+            
+            // Toggle active classes
+            guestSelector.querySelectorAll(".selector-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            
+            currentGuests = parseInt(btn.getAttribute("data-guests"));
+            
+            // Clear details selection
+            detailsContent.classList.add("hidden");
+            emptyDetailsMsg.classList.remove("hidden");
+            
+            await loadCalendar();
+        });
+
+        // Trigger manual scan — runs all 3 guest counts in sequence
+        runScanBtn.addEventListener("click", async () => {
+            const btnText = runScanBtn.querySelector(".btn-text");
+            const btnSpinner = runScanBtn.querySelector(".btn-spinner");
+
+            // Disable button & show spinner
+            runScanBtn.disabled = true;
+            btnSpinner.classList.remove("hidden");
+
+            // Read selected check-in date from the picker
+            const checkinStr = scanDateSelector.value;
+
+            const forceFallback = forceFallbackCheck.checked;
+            const guestCounts = [2, 4, 6];
+            const results = [];
+
+            for (const guests of guestCounts) {
+                btnText.textContent = `Scanning ${guests} guests… (${guestCounts.indexOf(guests) + 1}/${guestCounts.length})`;
+                try {
+                    const response = await fetch("/api/scan", {
+                        method: "POST",
+                        headers: fetchHeaders,
+                        body: JSON.stringify({
+                            location: "Greencastle",
+                            checkin_date: checkinStr,
+                            guest_count: guests,
+                            force_fallback: forceFallback,
+                            too_low_pct: activeTooLowThreshold,
+                            too_high_pct: activeTooHighThreshold
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.status === "success") {
+                        const src = result.data.data_source.toUpperCase();
+                        results.push(`✓ ${guests} guests [${src}]`);
+                    } else {
+                        results.push(`✗ ${guests} guests: ${result.message || 'failed'}`);
+                    }
+                } catch (err) {
+                    console.error(`Scan error (${guests} guests):`, err);
+                    results.push(`✗ ${guests} guests: request failed`);
+                }
+            }
+
+            // Show summary alert
+            const summary = results.join("\n");
+            alert(`Scan complete for ${checkinStr}:\n\n${summary}`);
+
+            // Hide the status banner since a scan was run to apply settings
+            statusAlert.classList.add("hidden");
+
+            // Restore button & refresh dashboard
+            runScanBtn.disabled = false;
+            btnText.textContent = "Run Real-Time Competitor Scan";
+            btnSpinner.classList.add("hidden");
+            await initDashboard();
+
+        });
+
+        // Load calendar ledger
+        async function loadCalendar() {
+            try {
+                const response = await fetch(`/api/pricing?guest_count=${currentGuests}&too_low_pct=${activeTooLowThreshold}&too_high_pct=${activeTooHighThreshold}`, {
+                    headers: fetchHeaders
+                });
+                const result = await response.json();
+                
+                // Index prices by checkin date string
+                const priceMap = {};
+                if (result.status === "success" && result.data) {
+                    result.data.forEach(item => {
+                        priceMap[item.checkin_date] = item;
+                    });
+                }
+                
+                monthsContainer.innerHTML = "";
+                
+                const today = new Date();
+
+                MONTHS_CONFIG.forEach(monthInfo => {
+                    const monthGrid = document.createElement("div");
+                    monthGrid.className = "month-grid";
+                    
+                    // Display Month Title matching the Airbnb style (clean bold casing)
+                    const displayMonthName = monthInfo.name.split(" ")[0]; // just "July", "August", etc.
+
+                    monthGrid.innerHTML = `
+                        <div class="month-title">${displayMonthName}</div>
+                        <div class="days-header">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div class="days-grid" id="grid-${monthInfo.year}-${monthInfo.month}"></div>
+                    `;
+                    
+                    monthsContainer.appendChild(monthGrid);
+                    const daysGrid = document.getElementById(`grid-${monthInfo.year}-${monthInfo.month}`);
+                    
+                    // 1. Add empty padding cells for start offset
+                    for (let i = 0; i < monthInfo.startOffset; i++) {
+                        const emptyCell = document.createElement("div");
+                        emptyCell.className = "calendar-cell cal-empty";
+                        daysGrid.appendChild(emptyCell);
+                    }
+                    
+                    // 2. Add day cells for all days of the month
+                    for (let day = 1; day <= monthInfo.totalDays; day++) {
+                        const cell = document.createElement("div");
+                        cell.className = "calendar-cell";
+                        
+                        // Check if today matches this date (highlight today)
+                        const isToday = today.getFullYear() === monthInfo.year && 
+                                        today.getMonth() === monthInfo.month && 
+                                        today.getDate() === day;
+                        
+                        if (isToday) {
+                            cell.classList.add("is-today");
+                        }
+
+                        // Construct checkin date string: YYYY-MM-DD
+                        const monthStr = String(monthInfo.month + 1).padStart(2, '0');
+                        const dayStr = String(day).padStart(2, '0');
+                        const dateKey = `${monthInfo.year}-${monthStr}-${dayStr}`;
+                        
+                        const item = priceMap[dateKey];
+                        if (item) {
+                            cell.classList.add("has-data");
+                            
+                            // Color code background + bottom border
+                            if (item.status === "Too Low") {
+                                cell.classList.add("cal-low");
+                            } else if (item.status === "Too High") {
+                                cell.classList.add("cal-high");
+                            } else {
+                                cell.classList.add("cal-healthy");
+                            }
+                            
+                            // Build cell HTML with day number and rate
+                            const displayPrice = item.my_price ? `€${item.my_price.toFixed(0)}` : "-";
+                            cell.innerHTML = `
+                                <span class="day-num">${day}</span>
+                                <span class="cell-price">${displayPrice}</span>
+                            `;
+
+                            // Click listener
+                            cell.addEventListener("click", () => {
+                                monthsContainer.querySelectorAll(".calendar-cell").forEach(c => c.classList.remove("selected"));
+                                cell.classList.add("selected");
+                                currentSelectedDate = item.checkin_date;
+                                showDetails(item);
+                            });
+
+                            // Re-apply selected class if this cell matches the globally selected date
+                            if (currentSelectedDate === dateKey) {
+                                cell.classList.add("selected");
+                            }
+                        } else {
+                            // Empty day without scan data shows as light grey cell
+                            cell.classList.add("cal-no-data");
+                            cell.innerHTML = `
+                                <span class="day-num">${day}</span>
+                                <span class="cell-price">-</span>
+                            `;
+                        }
+                        
+                        daysGrid.appendChild(cell);
+                    }
+                });
+
+                // Auto-refresh detail panel if a date was active
+                if (currentSelectedDate && priceMap[currentSelectedDate]) {
+                    showDetails(priceMap[currentSelectedDate]);
+                }
+            } catch (err) {
+                console.error("Error loading calendar:", err);
+                monthsContainer.innerHTML = `<div class="error-state">Failed to load calendar.</div>`;
+            }
+        }
+
+        // Show details panel
+        function showDetails(item) {
+            emptyDetailsMsg.classList.add("hidden");
+            detailsContent.classList.remove("hidden");
+            
+            // Apply fade + slide up animation
+            detailsContent.classList.remove("details-anim");
+            void detailsContent.offsetWidth; // Trigger reflow
+            detailsContent.classList.add("details-anim");
+            
+            // Calculate stay duration
+            let numNights = 2;
+            if (item.checkin_date && item.checkout_date) {
+                const ci = new Date(item.checkin_date);
+                const co = new Date(item.checkout_date);
+                numNights = Math.max(1, Math.round((co - ci) / (1000 * 60 * 60 * 24)));
+            }
+
+            detailsDate.innerHTML = `${formatDate(item.checkin_date)} - ${formatDate(item.checkout_date)} <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-left: 8px;">(${numNights}-night stay)</span>`;
+            detailsSource.textContent = item.data_source.toUpperCase();
+            detailsSource.className = "source-value " + (item.data_source === "live" ? "src-live" : "src-seed");
+            
+            // Label and border: flag estimated price if apartment was not found
+            if (item.my_listing_found === 0) {
+                detailsMyPriceLabel.textContent = "Harbour Bar Apartment Rate (Estimated)";
+                detailsMyPriceBox.style.borderColor = "#f59e0b"; // amber — estimated
+            } else {
+                detailsMyPriceLabel.textContent = "Harbour Bar Apartment Rate";
+                detailsMyPriceBox.style.borderColor = "var(--border-color)";
+            }
+            
+            const myNightly = item.my_nightly_price || (item.my_price ? (item.my_price / numNights) : 0);
+            const medianNightly = item.competitor_median_nightly || (item.competitor_median / numNights);
+            const tenthNightly = item.competitor_10th_nightly || (item.competitor_10th / numNights);
+
+            // Count-up helper function
+            function animateValue(obj, start, end, duration, formatFn) {
+                if (end === null || end === undefined) {
+                    obj.innerHTML = formatFn(0);
+                    return;
+                }
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = formatFn(start + progress * (end - start));
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // Set custom threshold label dynamically
+            const lowPctVal = item.too_low_pct || activeTooLowThreshold;
+            details10thPriceLabel.textContent = `Bottom ${lowPctVal}% Threshold`;
+
+            // Animate primary KPI rates
+            animateValue(detailsMyPrice, 0, item.my_price, 300, val => `€${val.toFixed(2)}<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; display: block; margin-top: 4px;">(€${myNightly.toFixed(0)}/night)</span>`);
+            animateValue(detailsMedianPrice, 0, item.competitor_median, 300, val => `€${val.toFixed(2)}<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; display: block; margin-top: 4px;">(€${medianNightly.toFixed(0)}/night)</span>`);
+            animateValue(details10thPrice, 0, item.competitor_10th, 300, val => `€${val.toFixed(2)}<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; display: block; margin-top: 4px;">(€${tenthNightly.toFixed(0)}/night)</span>`);
+            
+            detailsStatusTitle.textContent = `Pricing Status: ${item.status}`;
+            
+            // Recalculate recommendation text on-the-fly
+            let dynamicRec = "";
+            const highPctVal = item.too_high_pct || activeTooHighThreshold;
+
+            // Prefix note for dates where the apartment was not found on Booking.com
+            let notFoundNote = "";
+            if (item.my_listing_found === 0) {
+                notFoundNote = `⚠ Harbour Bar Apartment was not found in Booking.com search results for this date. ` +
+                    `This likely means the property was booked or unavailable. ` +
+                    `The rate shown is a seasonal estimate (seed data) — not a live Booking.com price. ` +
+                    `The pricing status below reflects that estimate and should be read with caution. | `;
+            }
+
+            if (item.status === "Too Low") {
+                const diff = Math.max(0, item.lower_threshold_price - item.my_price + 10);
+                dynamicRec = notFoundNote + `Estimated rate for this ${numNights}-night stay is €${item.my_price.toFixed(2)} (nightly equivalent: €${myNightly.toFixed(0)}/night), which is below the market rate range. Competitor median: €${item.competitor_median.toFixed(2)} total.`;
+            } else if (item.status === "Too High") {
+                const diff = Math.max(0, item.my_price - item.upper_threshold_price + 5);
+                dynamicRec = notFoundNote + `Estimated rate for this ${numNights}-night stay is €${item.my_price.toFixed(2)} (nightly equivalent: €${myNightly.toFixed(0)}/night), which is above the market rate range. Competitor median: €${item.competitor_median.toFixed(2)} total.`;
+            } else {
+                dynamicRec = notFoundNote + `${item.my_listing_found === 0 ? 'Estimated rate' : 'Your rate'} for this ${numNights}-night stay is €${item.my_price ? item.my_price.toFixed(2) : '—'} (nightly equivalent: €${myNightly.toFixed(0)}/night). This rate is healthy and competitive with local market rates.`;
+            }
+            detailsRecommendationText.textContent = dynamicRec;
+            
+            detailsStatusBox.className = "status-alert-box";
+            const statusDot = document.getElementById("details-status-dot");
+            statusDot.className = "status-indicator-dot";
+ 
+            if (item.status === "Too Low") {
+                detailsStatusBox.classList.add("box-low");
+                statusDot.classList.add("dot-low");
+            } else if (item.status === "Too High") {
+                detailsStatusBox.classList.add("box-high");
+                statusDot.classList.add("dot-high");
+            } else {
+                detailsStatusBox.classList.add("box-healthy");
+                statusDot.classList.add("dot-healthy");
+            }
+
+            
+            const isLive = item.data_source === "live";
+            detailsConfidenceBadge.className = "confidence-badge";
+            if (isLive) {
+                detailsConfidenceBadge.textContent = "✓ LIVE DATA";
+                detailsConfidenceBadge.classList.add("badge-green");
+                detailsConfidenceReason.textContent = "Real-time Booking.com market data. Results reflect current competitor pricing.";
+            } else {
+                detailsConfidenceBadge.textContent = "⚠ SYNTHETIC FALLBACK";
+                detailsConfidenceBadge.classList.add("badge-red");
+                detailsConfidenceReason.textContent = "Booking.com was unreachable during this scan. Prices are estimated from seasonal baselines for demo continuity — treat with caution.";
+            }
+
+            // Expose explanation markup body (HTML rendered markdown blocks)
+            if (item.recommendation && item.recommendation.includes("###")) {
+                let markdownCleaned = item.recommendation
+                    .replace(/### \*\*(.*?)\*\"/g, '<h5>$1</h5>')
+                    .replace(/### (.*?)/g, '<h5>$1</h5>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>');
+                detailsExplanation.innerHTML = markdownCleaned;
+            } else {
+                const weekdayStr = new Date(item.checkin_date).getDay() in [0, 6] ? "weekend" : "weekday";
+                const guestsWord = currentGuests === 2 ? "two guests" : (currentGuests === 4 ? "four guests" : "six guests");
+                const sourceLabel = item.data_source === "live" ? "live scraper" : "fallback seed data";
+                
+                let explanationHtml = `
+                    <div class="analyst-spec-block">
+                        <p>This recommendation is based on <strong>${sourceLabel}</strong> market data for <strong>${guestsWord}</strong> on a <strong>${weekdayStr}</strong> check-in.</p>
+                        <p>Your current price of €${item.my_price.toFixed(2)} is positioned at the status of <strong>${item.status}</strong> relative to the market median of €${item.competitor_median.toFixed(2)}.</p>
+                        <p><strong>Rule Match:</strong> ${item.recommendation}</p>
+                        <p><strong>Data Source:</strong> ${isLive ? '✓ Live Booking.com data — results are trustworthy.' : '⚠ Synthetic fallback — Booking.com was unreachable. For demo continuity only.'}</p>
+                    </div>
+                `;
+                detailsExplanation.innerHTML = explanationHtml;
+            }
+        }
+
+
+        // Load telemetry activity timeline & step-level trace logs (Observability)
+        async function loadTelemetry() {
+            try {
+                const response = await fetch("/api/telemetry", {
+                    headers: fetchHeaders
+                });
+                const result = await response.json();
+                
+                // 1. Scans timeline
+                if (result.status === "success" && result.scans && result.scans.length > 0) {
+                    timelineContainer.innerHTML = "";
+                    result.scans.forEach(scan => {
+                        const row = document.createElement("div");
+                        row.className = "timeline-item-row";
+                        
+                        const sourceBadgeClass = scan.data_source === "live" ? "src-live" : "src-seed";
+                        let statusDotClass = "dot-healthy";
+                        if (scan.status === "Too Low") statusDotClass = "dot-low";
+                        if (scan.status === "Too High") statusDotClass = "dot-high";
+
+                        row.innerHTML = `
+                            <div class="timeline-meta-col">
+                                <span class="time-stamp">${scan.scan_timestamp.split(' ')[1]}</span>
+                                <span class="date-stamp">${scan.scan_timestamp.split(' ')[0]}</span>
+                            </div>
+                            <div class="timeline-body-col">
+                                <div class="timeline-title-flex">
+                                    <strong>Competitor Scan: ${scan.location} (${scan.guest_count} guests)</strong>
+                                    <span class="source-badge-mini ${sourceBadgeClass}">${scan.data_source.toUpperCase()}</span>
+                                </div>
+                                <div class="timeline-details-flex">
+                                    <span class="status-ref"><span class="status-indicator-dot ${statusDotClass}"></span> ${scan.status}</span>
+                                    <span class="score-ref ${scan.data_source === 'live' ? 'src-live' : 'src-seed'}">${scan.data_source === 'live' ? '✓ Live' : '⚠ Synthetic'}</span>
+                                    <span class="price-ref">Price: €${scan.my_price.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `;
+                        timelineContainer.appendChild(row);
+                    });
+                } else {
+                    timelineContainer.innerHTML = `<div class="empty-state">No run activity recorded.</div>`;
+                }
+
+                // 2. Step-level trace logs
+                if (result.status === "success" && result.step_logs && result.step_logs.length > 0) {
+                    traceLogsContainer.innerHTML = "";
+                    result.step_logs.forEach(log => {
+                        const div = document.createElement("div");
+                        div.className = "trace-log-row";
+                        
+                        div.innerHTML = `
+                            <div class="trace-log-meta">
+                                <span class="trace-time">${log.scan_timestamp.split(' ')[1]}</span>
+                                <span class="trace-duration">${log.duration_ms}ms</span>
+                            </div>
+                            <div class="trace-log-body">
+                                <span class="trace-step-name">[${log.step_name}]</span>
+                                <span class="trace-details">${log.details}</span>
+                            </div>
+                        `;
+                        traceLogsContainer.appendChild(div);
+                    });
+                } else {
+                    traceLogsContainer.innerHTML = `<div class="empty-state">No execution traces recorded. Run a scan to capture traces.</div>`;
+                }
+            } catch (err) {
+                console.error("Error loading telemetry:", err);
+                timelineContainer.innerHTML = `<div class="error-state">Failed to load timeline.</div>`;
+                traceLogsContainer.innerHTML = `<div class="error-state">Failed to load trace logs.</div>`;
+            }
+        }
+
+        // Chat Send Action
+        chatSendBtn.addEventListener("click", async () => {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Append user message to thread
+            appendChatMessage("user-message", message);
+            chatInput.value = "";
+
+            // Append typing placeholder
+            const typingId = appendChatMessage("system-message typing", "Coordinator agent is retrieving strategy context...");
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: fetchHeaders,
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: "strategy_session",
+                        too_low_pct: activeTooLowThreshold,
+                        too_high_pct: activeTooHighThreshold
+                    })
+                });
+                const result = await response.json();
+                
+                // Remove typing placeholder
+                const typEl = document.getElementById(typingId);
+                if (typEl) typEl.remove();
+
+                if (response.ok && result.status === "success") {
+                    appendChatMessage("system-message", result.response);
+                } else {
+                    appendChatMessage("system-message error-msg", `Error: ${result.message || 'Failed to analyze strategy.'}`);
+                }
+            } catch (err) {
+                console.error("Chat error:", err);
+                const typEl = document.getElementById(typingId);
+                if (typEl) typEl.remove();
+                appendChatMessage("system-message error-msg", "Network error. Failed to reach agent coordinator.");
+            }
+        });
+
+        // Click handler for suggestion chips
+        window.submitStrategyQuery = function(queryText) {
+            chatInput.value = queryText;
+            chatSendBtn.click();
+        };
+
+        function appendChatMessage(type, text) {
+            const msg = document.createElement("div");
+            const msgId = "msg-" + Math.random().toString(36).substr(2, 9);
+            msg.id = msgId;
+            msg.className = `chat-message ${type}`;
+            
+            // Basic formatting for presentation
+            let formattedText = text
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            msg.innerHTML = formattedText;
+            chatThread.appendChild(msg);
+            chatThread.scrollTop = chatThread.scrollHeight;
+            return msgId;
+        }
+
+        // Trigger on Enter
+        chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                chatSendBtn.click();
+            }
+        });
+
+        // Theme Toggle Functionality
+        window.toggleTheme = function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleButton(newTheme);
+        };
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('theme-toggle-btn');
+            if (btn) {
+                btn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        // Page load
+        window.addEventListener("DOMContentLoaded", () => {
+            initDashboard();
+            updateThemeToggleButton(document.documentElement.getAttribute('data-theme') || 'light');
+        });
+    </script>
+</body>
+</html>
