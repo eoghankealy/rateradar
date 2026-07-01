@@ -14,13 +14,13 @@ Short-term rental pricing is traditionally reactive, manual, and fragmented. Man
 
 ```mermaid
 graph TD
-    A["Host / User"] --> B("Coordinator Agent<br>Intent Routing")
-    B --> C("Pricing Analyst Agent<br>Reasoning & Orchestration")
-    C <--> D[("SQLite Ledger<br>Long-Term Market Memory")]
-    C -.-> E["Native ADK Plugin<br>Tool Execution Layer"]
-    E --> F("Market Collection Service<br>Live Playwright + Seed Fallback")
-    F --> G["Deterministic Engine<br>Math & Percentiles"]
-    G --> H("Dashboard & Telemetry<br>Explainable Recommendation")
+    A[Host / User] --> B(Coordinator Agent: Intent Routing)
+    B --> C(Pricing Analyst Agent: Reasoning & Orchestration)
+    C <--> D[(SQLite Ledger: Long-Term Market Memory)]
+    C -.-> E[Native ADK Plugin: Tool Execution Layer]
+    E --> F(Market Collection Service: Live Playwright + Seed Fallback)
+    F --> G[Deterministic Engine: Math & Percentiles]
+    G --> H(Dashboard & Telemetry: Explainable Recommendation)
 ```
 
 ---
