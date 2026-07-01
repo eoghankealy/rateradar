@@ -571,7 +571,7 @@ class MarketDataCollector:
         my_price = self.fetch_my_listing_price(checkin_date, checkout_date, guest_count)
         listings.append(
             {
-                "name": "Harbour Bar Apartment",
+                "name": "Your Property",
                 "price": my_price,
                 "rating": 9.2,
                 "data_source": "seed",

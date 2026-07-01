@@ -144,7 +144,7 @@ def run_market_scan_tool(
         # Remove our listing from the competitors list so it isn't analyzed as a competitor
         competitors = [c for c in competitors if not c.get("is_my_listing")]
         my_listing = {
-            "name": "Harbour Bar Apartment",
+            "name": "Your Property",
             "price": my_price,
             "rating": my_listing_obj.get("rating", 9.2),
             "data_source": data_source,
@@ -153,14 +153,14 @@ def run_market_scan_tool(
     else:
         # Listing not found on Booking.com for this date (common in live runs if booked out)
         logger.warning(
-            f"Harbour Bar Apartment listing not found on Booking.com for check-in: {checkin_date}. Using seasonal fallback pricing."
+            f"Your Property listing not found on Booking.com for check-in: {checkin_date}. Using seasonal fallback pricing."
         )
         my_listing_found = 0
         my_price = collector.fetch_my_listing_price(
             checkin_date, checkout_date, guest_count
         )
         my_listing = {
-            "name": "Harbour Bar Apartment (NOT FOUND)",
+            "name": "Your Property (NOT FOUND)",
             "price": my_price,
             "rating": 9.2,
             "data_source": data_source,
@@ -252,7 +252,7 @@ def run_market_scan_tool(
         else:
             status = "Healthy"
         recommendation = (
-            f"Harbour Bar Apartment was not found in the search results for this {num_nights}-night stay. "
+            f"Your Property was not found in the search results for this {num_nights}-night stay. "
             f"Likely reason: The listing is already booked, blocked by host controls, or restricted for this specific date range. "
             f"Competitor data was successfully collected: Typical market price (median) is €{p50:.2f} total stay (nightly equivalent: €{p50_nightly:.2f}). "
             f"If your listing were active, our recommended baseline rate would be €{my_price:.2f} total (nightly equivalent: €{my_nightly:.2f})."
@@ -420,7 +420,7 @@ Based on the results, formulate a logical pricing strategy. Review the competito
 
 Note that scans are based on a 2-night stay by default. All competitive pricing analysis and recommendations must mention both the total stay rate and the nightly equivalent rate.
 
-If my own listing 'Harbour Bar Apartment' is not found in the search results, this is a normal business scenario (the property is likely booked out, blocked by host controls, or restricted for this period). It is NOT a scraping failure. You must explain to the user that competitor rates were successfully collected but their own listing is likely unavailable/booked, and present recommended pricing boundaries for reference.
+If my own listing 'Your Property' is not found in the search results, this is a normal business scenario (the property is likely booked out, blocked by host controls, or restricted for this period). It is NOT a scraping failure. You must explain to the user that competitor rates were successfully collected but their own listing is likely unavailable/booked, and present recommended pricing boundaries for reference.
 
 In your output, you MUST return a structured response with two distinct sections:
 ### **Pricing Analysis Recommendation**

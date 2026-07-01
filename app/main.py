@@ -451,7 +451,7 @@ async def chat_endpoint(payload: ChatRequest):
             too_low = sum(1 for s in scans if s.get("status") == "Too Low")
             fallback_text = (
                 "⚠️ **Demo Mode — Agent Unavailable** *(Answering from live database)*\n\n"
-                f"**Portfolio Summary — Harbour Bar Apartment**\n\n"
+                f"**Portfolio Summary — Your Property**\n\n"
                 f"- Total dates scanned: **{len(scans)}**\n"
                 f"- Live Booking.com data: **{live_count}** dates\n"
                 f"- Pricing status: ✅ {healthy} Healthy | 🔴 {too_high} Too High | 🔵 {too_low} Too Low\n\n"

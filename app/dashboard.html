@@ -203,7 +203,7 @@
 
                     <div class="pricing-metrics-grid">
                         <div class="metric-box" id="details-my-price-box">
-                            <span class="metric-label" id="details-my-price-label">Harbour Bar Apartment Rate</span>
+                            <span class="metric-label" id="details-my-price-label">Your Property Rate</span>
                             <span class="metric-val highlight" id="details-my-price">€220.00</span>
                             <span class="metric-period">2-night stay</span>
                         </div>
@@ -707,10 +707,10 @@
             
             // Label and border: flag estimated price if apartment was not found
             if (item.my_listing_found === 0) {
-                detailsMyPriceLabel.textContent = "Harbour Bar Apartment Rate (Estimated)";
+                detailsMyPriceLabel.textContent = "Your Property Rate (Estimated)";
                 detailsMyPriceBox.style.borderColor = "#f59e0b"; // amber — estimated
             } else {
-                detailsMyPriceLabel.textContent = "Harbour Bar Apartment Rate";
+                detailsMyPriceLabel.textContent = "Your Property Rate";
                 detailsMyPriceBox.style.borderColor = "var(--border-color)";
             }
             
@@ -754,7 +754,7 @@
             // Prefix note for dates where the apartment was not found on Booking.com
             let notFoundNote = "";
             if (item.my_listing_found === 0) {
-                notFoundNote = `⚠ Harbour Bar Apartment was not found in Booking.com search results for this date. ` +
+                notFoundNote = `⚠ Your Property was not found in Booking.com search results for this date. ` +
                     `This likely means the property was booked or unavailable. ` +
                     `The rate shown is a seasonal estimate (seed data) — not a live Booking.com price. ` +
                     `The pricing status below reflects that estimate and should be read with caution. | `;
