@@ -209,5 +209,5 @@ terraform apply
 
 **Kaggle writeup:** [Kaggle Capstone Writeup](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project/writeups/new-writeup-1782866733616)  
 **Demo video:** [https://youtu.be/erABGKKtvMw](https://youtu.be/erABGKKtvMw)  
-**Live demo:** [https://rateradar-606493503364.us-central1.run.app/dashboard](https://rateradar-606493503364.us-central1.run.app/dashboard)  
+**Live dashboard:** [https://rateradar-606493503364.us-central1.run.app/dashboard](https://rateradar-606493503364.us-central1.run.app/dashboard)  
 **GitHub repository:** [https://github.com/eoghankealy/rateradar](https://github.com/eoghankealy/rateradar)
